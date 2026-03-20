@@ -1,4 +1,4 @@
-##### Get local fuel prices (fuel_prices) 1.0
+##### Get local fuel prices (fuel_prices) 1.1
 
 Downloads the goverments fuel data and greps it based on first two charicters in your postcode then mesures the distance in km from your latitude and longitude. 
 Then sorts the results low to high and displays the prices. It also records an ongoing log of all historic prices it has fetched.
@@ -29,6 +29,8 @@ Options are...
     -f      Force an update, regardless of if the file has expired. It expires every 12 hours.
             Because of the cache, if you change location you need to force an update or wait 12 hours.
     -o      Output folder, where it saves all data files.
+
+    -c      Disable output with colour escape codes.
 ```
 
 Feel free to do with this as you please, but I take no responsibility for its use or functionality. That said...
