@@ -1,6 +1,6 @@
 ##### Get local fuel prices (fuel_prices) 1.1
 
-Downloads the goverments fuel data and greps it based on first two charicters in your postcode then mesures the distance in km from your latitude and longitude. 
+Downloads the governments fuel data and greps it based on first two characters in your postcode then measures the distance in km from your latitude and longitude.
 Then sorts the results low to high and displays the prices. It also records an ongoing log of all historic prices it has fetched.
 
 ###### Usage
