@@ -2,7 +2,7 @@
 
 # Author: MrMoo
 # Date Created: 2026-03-12
-# Last Modified: 2026-03-20
+# Last Modified: 2026-03-23
 
 # Notes: 
 #       Petrol (E10), Super (E5), Diesel (B7), Super Diesel
@@ -170,7 +170,7 @@ OLD_IFS=$IFS
 
 
 # --------------------------------------------------------
-# Distance Functions
+# Functions
 # --------------------------------------------------------
 # Degrees to Radians
 deg2rad() {
@@ -196,12 +196,14 @@ haversine() {
     echo $distance
 }
 
-# Decrease or increase for floats
-decrease_increase() {
+difference_formatted() {
+    difference=$((echo "$1 - $2") | bc -l | awk '{printf "%.2f", $0}')
     if [[ $((echo "$1 < $2") | bc -l) == 1 ]]; then
-        echo "-"
+        echo "($difference)"
     elif [[ $((echo "$1 > $2") | bc -l) == 1 ]]; then
-        echo "+"
+        echo "(+$difference)"
+    else
+        echo "       " # Dirty output for position
     fi
 }
 # --------------------------------------------------------
@@ -326,6 +328,7 @@ fi
 # --------------------------------------------------------
 
 # Get the last cache data for comparing
+# -----------------------------------------
 while IFS=',' read -r $cache_col_header_string; do
     IFS=','
     trading_name_array+=( $(printf "$trading_name") )
@@ -333,55 +336,58 @@ while IFS=',' read -r $cache_col_header_string; do
     fuel_price_E10_array+=( $(printf %.2f "$fuel_price_E10") )
     fuel_price_B7S_array+=( $(printf %.2f "$fuel_price_B7S") )
 done < $cache_file_old
+# -----------------------------------------
 
-
-# Get from cache the text tile an loop through what we have
-console_output+=$(printf "%-30s" "")
+# Get from cache the text tile and loop through what we have
+# -----------------------------------------
+console_output+=$(printf "%-37s" "")
 console_output+="$col_petrol\tPetrol$col_end  \t$col_diesel""Diesel$col_end\n"
 while IFS=',' read -r $cache_col_header_string; do
 
+    # Find the last value from the old cache
+    found=0
+    array_counter=0
+    for item in "${trading_name_array[@]}"; do
+        if [[ $item == $trading_name ]]; then
+            found=1
+            break
+        fi
+        array_counter=$(($array_counter+1))
+    done
+
+    # Get a formatted +- difference value from the last cache if its not new
+    if [[ $found == 1 ]]; then
+        fuel_price_E10_val_diff=$(difference_formatted $fuel_price_E10 ${fuel_price_E10_array[$array_counter]})
+        fuel_price_B75_val_diff=$(difference_formatted $fuel_price_B7S ${fuel_price_B7S_array[$array_counter]})
+    else
+        fuel_price_E10_val_diff=$(difference_formatted 0 0)
+        fuel_price_B75_val_diff=$(difference_formatted 0 0)
+    fi
+
+    # Do we have colour enabled
     E10_out_start=""
     B7S_out_start=""
-
     if [ $disable_colour == 0 ]; then
-        # Find the last value from the old cache
-        found=0
-        counter=0
-        for item in "${trading_name_array[@]}"; do
-            if [[ $item == $trading_name ]]; then
-                found=1
-                break
-            fi
-            counter=$(($counter+1))
-        done
-
-        # Compare the rise or fall, for doing colours
-        fuel_price_E10_diff="="
-        fuel_price_B7S_diff="="
-        if [ $found == 1 ]; then
-            fuel_price_E10_diff=$(decrease_increase $fuel_price_E10 ${fuel_price_E10_array[$counter]})
-            fuel_price_B7S_diff=$(decrease_increase $fuel_price_B7S ${fuel_price_B7S_array[$counter]})
-        fi
-
-        if [[ $fuel_price_E10_diff == "-" ]]; then
+        if [[ $fuel_price_E10_val_diff == *"-"* ]]; then
             E10_out_start=$col_good
-        elif [[ $fuel_price_E10_diff == "+" ]]; then
+        elif [[ $fuel_price_E10_val_diff == *"+"* ]]; then
             E10_out_start=$col_bad
         fi
 
-        if [[ $fuel_price_B7S_diff == "-" ]]; then
+        if [[ $fuel_price_B75_val_diff == *"-"* ]]; then
             B7S_out_start=$col_good
-        elif [[ $fuel_price_B7S_diff == "+" ]]; then
+        elif [[ $fuel_price_B75_val_diff == *"+"* ]]; then
             B7S_out_start=$col_bad
         fi
     fi
 
     # Construct the output
     console_output+=$(printf "%-30s" "$trading_name")"\t"
-    console_output+="$E10_out_start"$(printf %.2f "$fuel_price_E10")"$col_end\t\t"
-    console_output+="$B7S_out_start"$(printf %.2f "$fuel_price_B7S")"$col_end\n"
+    console_output+="$E10_out_start$fuel_price_E10_val_diff$col_end "$(printf %.2f "$fuel_price_E10")"\t"
+    console_output+="$B7S_out_start$fuel_price_B75_val_diff$col_end "$(printf %.2f "$fuel_price_B7S")"\n"
 
 done < $cache_file
+# -----------------------------------------
 
 # cut off the last \n
 console_output=${console_output:0:${#console_output}-2}
